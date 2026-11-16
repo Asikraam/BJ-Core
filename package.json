@@ -1,0 +1,77 @@
+{
+  "name": "bj-core",
+  "version": "1.0.0",
+  "description": "BJ-Core — Batch vector converter for WMF, EMF, WMZ, and EMZ metafiles to PDF",
+  "main": "dist-electron/main/main.js",
+  "author": "BJ-Core",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev:renderer": "vite",
+    "build:renderer": "vite build",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "build:code": "npm run build:electron && npm run build:renderer",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.electron.json",
+    "start": "npm run build:code && electron .",
+    "build": "npm run build:code && electron-builder --win --x64 --publish never",
+    "capture": "npm run build:code && electron scripts/capture-assets.mjs",
+    "test": "node test/converter.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Asikraam/BJ-Core.git"
+  },
+  "homepage": "https://github.com/Asikraam/BJ-Core",
+  "dependencies": {
+    "emf-converter": "^4.29.0",
+    "pdf-lib": "^1.17.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "electron": "^44.9.3",
+    "electron-builder": "^26.18.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  },
+  "build": {
+    "appId": "com.aswal.bj-core",
+    "productName": "BJ-Core",
+    "copyright": "Copyright © 2026 Aswal Ikraam Aritonang",
+    "asar": true,
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist-electron/**/*",
+      "dist-renderer/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "build/icon.png",
+      "artifactName": "BJ-Core-v${version}-win-x64-Portable.${ext}",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "BJ-Core",
+      "runAfterFinish": true,
+      "artifactName": "BJ-Core-Setup-v${version}-win-x64.${ext}"
+    }
+  }
+}
