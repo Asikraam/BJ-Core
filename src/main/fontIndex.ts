@@ -301,7 +301,11 @@ export async function ensureSystemFontsLoaded(): Promise<CachedFontStore> {
 
       for (const fp of fontPaths) {
         const lowerBase = path.basename(fp).toLowerCase();
-        if (CORE_FONT_FILE_PREFIXES.some((prefix) => lowerBase.startsWith(prefix))) {
+        // Always include core Windows/CAD TrueType fonts and all lightweight .fon/.fnt raster fonts
+        if (
+          /\.(fon|fnt)$/i.test(lowerBase) ||
+          CORE_FONT_FILE_PREFIXES.some((prefix) => lowerBase.startsWith(prefix))
+        ) {
           corePaths.add(fp);
         }
 
@@ -430,9 +434,16 @@ export async function resolveFontsForConversion(
     const norm = normalizeFontName(f.name);
     const stripped = stripStyleSuffix(norm);
     for (const key of [norm, stripped]) {
+      if (!key) continue;
       const paths = store.familyToPaths.get(key);
       if (paths) {
         for (const p of paths) neededPaths.add(p);
+      }
+      // Handle 31-char GDI LOGFONT face name truncation or style variants
+      for (const [fam, famPaths] of store.familyToPaths.entries()) {
+        if (fam.startsWith(key) || (key.length >= 12 && key.startsWith(fam))) {
+          for (const p of famPaths) neededPaths.add(p);
+        }
       }
     }
     const cadCandidates = CAD_FALLBACK_CANDIDATES[norm];

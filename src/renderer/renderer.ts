@@ -60,7 +60,6 @@ const progressMeta = document.getElementById('progressMeta') as HTMLSpanElement;
 let outputManuallyEdited = false;
 let isRunning = false;
 let lastOutputDir = '';
-let currentRamMb = 0;
 let activeFilter: 'all' | 'ok' | 'warn' | 'error' = 'all';
 
 // Selection state: either 'folder' or 'files'
@@ -213,8 +212,7 @@ function populateQueueFromEntries(entries: ScannedFileEntry[]): void {
   statSkip.textContent = '0';
   statError.textContent = '0';
   progressBar.style.width = '0%';
-  const ramLabel = currentRamMb > 0 ? `RAM: ~${currentRamMb} MB | ` : '';
-  progressMeta.textContent = `${ramLabel}0 / ${entries.length} (0%) | Sisa waktu: —`;
+  progressMeta.textContent = `0 / ${entries.length} (0%) | Sisa waktu: —`;
   phaseText.textContent =
     entries.length > 0
       ? `${entries.length} gambar siap diubah ke PDF — Klik tombol "1. Mulai Ubah ke PDF"`
@@ -271,16 +269,13 @@ function handleFileUpdate(update: FileStatusUpdate): void {
 }
 
 function updateFontStatus(status: FontCacheStatus): void {
-  if (status.ramMb > 0) {
-    currentRamMb = status.ramMb;
-  }
   fontStatusText.classList.remove('ready', 'error');
   if (status.error) {
     fontStatusText.classList.add('error');
     fontStatusText.textContent = 'Font Windows: gagal dimuat';
   } else if (status.ready) {
     fontStatusText.classList.add('ready');
-    fontStatusText.textContent = `Font Windows: ${status.fontFileCount} siap | RAM: ~${status.ramMb} MB`;
+    fontStatusText.textContent = `Font Windows: ${status.fontFileCount} siap`;
   } else {
     fontStatusText.textContent = 'Font Windows: memuat...';
   }
@@ -419,9 +414,6 @@ function updateControls(): void {
 }
 
 function updateProgress(p: BatchProgress): void {
-  if (p.ramMb > 0) {
-    currentRamMb = p.ramMb;
-  }
   const pct = p.total > 0 ? Math.round((p.current / p.total) * 100) : 0;
   progressBar.style.width = `${pct}%`;
 
@@ -430,7 +422,7 @@ function updateProgress(p: BatchProgress): void {
   statSkip.textContent = String(p.skipCount);
   statError.textContent = String(p.errorCount);
 
-  progressMeta.textContent = `RAM: ~${currentRamMb} MB | ${p.current} / ${p.total} (${pct}%) | Sisa waktu: ${formatEta(
+  progressMeta.textContent = `${p.current} / ${p.total} (${pct}%) | Sisa waktu: ${formatEta(
     p.etaMs
   )}`;
 
