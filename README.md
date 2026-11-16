@@ -12,7 +12,7 @@
 [![Windows CI](https://img.shields.io/github/actions/workflow/status/Asikraam/BJ-Core/ci.yml?style=for-the-badge&label=Windows%20CI&logo=windows)](https://github.com/Asikraam/BJ-Core/actions)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-10b981?style=for-the-badge)](LICENSE)
 
-**English** · [Bahasa Indonesia](docs/README_ID.md) · [Changelog](CHANGELOG.md)
+**English** · [Panduan Bahasa Indonesia](docs/README_ID.md) · [Pituduh Basa Sunda](docs/README_SU.md) · [Changelog](CHANGELOG.md)
 
 [Download](#-download--install) · [Features](#-whats-inside) · [How It Works](#%EF%B8%8F-under-the-hood) · [Run from Source](#%EF%B8%8F-run-from-source)
 
