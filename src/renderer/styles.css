@@ -373,6 +373,14 @@ input[type='text']:disabled {
   background: var(--surface-hover);
 }
 
+.queue-table tbody tr.clickable-row {
+  cursor: pointer;
+}
+
+.queue-table tbody tr.clickable-row:hover {
+  background: #e3effc;
+}
+
 .col-name {
   width: 34%;
 }

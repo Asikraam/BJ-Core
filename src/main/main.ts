@@ -230,6 +230,13 @@ function registerIpcHandlers(): void {
     if (!targetPath) return 'Path kosong';
     return shell.openPath(path.resolve(targetPath));
   });
+
+  ipcMain.handle('open-file', async (_event, filePath: string) => {
+    if (!filePath) return 'File kosong';
+    const resolved = path.resolve(filePath);
+    if (!existsSync(resolved)) return 'File PDF tidak ditemukan di disk';
+    return shell.openPath(resolved);
+  });
 }
 
 app.whenReady().then(() => {

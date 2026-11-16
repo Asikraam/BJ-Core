@@ -53,9 +53,10 @@ Buka aplikasi **BJ PDF**, lalu lihat dua tombol di sebelah kanan kolom **Sumber 
 - Klik tombol biru **`1. Mulai Ubah ke PDF`**.
 - Tunggu hingga status di kiri bawah bertuliskan **`Selesai`**.
 
-### Langkah 3 — Klik Tombol `2. Buka Folder Hasil PDF`
-- Klik tombol hijau **`2. Buka Folder Hasil PDF`**.
-- Folder `PDF_Output` berisi seluruh file PDF hasil konversi akan langsung terbuka di layar.
+### Langkah 3 — Klik Tombol `2. Buka Folder Hasil PDF` (atau Klik 2× di Tabel)
+- **Ingin cek 1 file PDF langsung?** Cukup **klik 2× (double-click)** pada baris gambar yang sudah `Berhasil (OK)` di dalam tabel — file PDF-nya langsung terbuka!
+- **Ingin buka seluruh foldernya?** Klik tombol hijau **`2. Buka Folder Hasil PDF`**.
+- **Ingat Folder Otomatis:** Saat besok Anda membuka aplikasi **BJ PDF** lagi, folder kerja terakhir otomatis terbuka kembali tanpa perlu memilih dari awal.
 
 ---
 

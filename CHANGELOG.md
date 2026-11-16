@@ -2,6 +2,12 @@
 
 All notable changes to **BJ PDF** (`BJ-Core`) are documented here.
 
+## [1.2.0] — 2026-11-17
+
+### Added
+- **Double-Click Row to Open PDF (`Klik 2x buka PDF`)**: Double-clicking any completed row in the queue table immediately opens that specific `.pdf` file in the default PDF viewer (Edge / Adobe Reader).
+- **Remember Last Folder & Settings (`localStorage`)**: Automatically saves and restores the last used source folder, output folder, recursive toggle, and merge toggle when reopening the app.
+
 ## [1.1.0] — 2026-11-17
 
 ### Added

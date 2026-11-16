@@ -58,7 +58,8 @@ Tingali tombol di belah katuhu luhur:
 ### Langkah 3 — Pencet "1. Mulai Ubah ke PDF" terus "2. Buka Folder Hasil PDF"
 1. Pencet tombol biru **`1. Mulai Ubah ke PDF`**.
 2. Tungguan sakeudeung nepi ka tulisan di handap jadi **`Selesai`**.
-3. Langsung pencet tombol hejo **`2. Buka Folder Hasil PDF`** — folder tempat file PDF-na bakal langsung kabuka otomatis!
+3. **Mun rek langsung ningali 1 file PDF-na:** tinggal **klik 2x (double-click)** we baris gambar nu geus `Berhasil (OK)` dina tabel, engke PDF-na langsung kabuka!
+4. **Mun rek muka folderna:** pencet tombol hejo **`2. Buka Folder Hasil PDF`**. Aplikasi oge otomatis nginget folder terakhir, jadi isukan pas muka aplikasi deui teu kudu milih folder ti awal.
 
 ---
 

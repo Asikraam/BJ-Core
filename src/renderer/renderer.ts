@@ -21,6 +21,7 @@ interface QueueRowModel {
   status: QueueFileStatus;
   durationMs?: number;
   detail: string;
+  outputPdfPath?: string;
   tr?: HTMLTableRowElement;
 }
 
@@ -118,11 +119,25 @@ function updateRowCells(row: QueueRowModel): void {
   cells[4].textContent = row.detail;
   cells[4].title = row.detail;
 
+  const hasPdf = Boolean(row.outputPdfPath);
+  row.tr.classList.toggle('clickable-row', hasPdf);
+  row.tr.title = hasPdf
+    ? `Klik 2x untuk langsung membuka ${row.outputPdfPath}`
+    : '';
   row.tr.classList.toggle('hidden', !matchesFilter(row.status));
 }
 
 function buildRowElement(row: QueueRowModel): HTMLTableRowElement {
   const tr = document.createElement('tr');
+
+  tr.addEventListener('dblclick', async () => {
+    if (!row.outputPdfPath) return;
+    phaseText.textContent = `Membuka file PDF: ${row.relPath}...`;
+    const errMsg = await window.batchApi.openFile(row.outputPdfPath);
+    if (errMsg) {
+      phaseText.textContent = `Gagal membuka PDF: ${errMsg}`;
+    }
+  });
 
   const tdName = document.createElement('td');
   tdName.className = 'cell-mono';
@@ -233,6 +248,7 @@ function handleFileUpdate(update: FileStatusUpdate): void {
       status: update.status,
       durationMs: update.durationMs,
       detail: update.detail || '',
+      outputPdfPath: update.outputPdfPath,
     };
     queueOrder.push(row);
     queueMap.set(update.relPath, row);
@@ -245,6 +261,7 @@ function handleFileUpdate(update: FileStatusUpdate): void {
     row.status = update.status;
     if (typeof update.durationMs === 'number') row.durationMs = update.durationMs;
     if (update.detail !== undefined) row.detail = update.detail;
+    if (update.outputPdfPath) row.outputPdfPath = update.outputPdfPath;
     updateRowCells(row);
   }
 
@@ -266,6 +283,77 @@ function updateFontStatus(status: FontCacheStatus): void {
     fontStatusText.textContent = `Font Windows: ${status.fontFileCount} siap | RAM: ~${status.ramMb} MB`;
   } else {
     fontStatusText.textContent = 'Font Windows: memuat...';
+  }
+}
+
+const STORAGE_KEYS = {
+  lastInputDir: 'bj_pdf_last_input_dir',
+  lastOutputDir: 'bj_pdf_last_output_dir',
+  lastOutputManual: 'bj_pdf_last_output_manual',
+  recursive: 'bj_pdf_recursive',
+  merge: 'bj_pdf_merge',
+};
+
+function savePrefs(): void {
+  try {
+    if (baseSourceDir) {
+      localStorage.setItem(STORAGE_KEYS.lastInputDir, baseSourceDir);
+    }
+    localStorage.setItem(STORAGE_KEYS.lastOutputDir, outputDirEl.value.trim());
+    localStorage.setItem(
+      STORAGE_KEYS.lastOutputManual,
+      outputManuallyEdited ? '1' : '0'
+    );
+    localStorage.setItem(
+      STORAGE_KEYS.recursive,
+      recursiveCheck.checked ? '1' : '0'
+    );
+    localStorage.setItem(STORAGE_KEYS.merge, mergeCheck.checked ? '1' : '0');
+  } catch {
+    // Ignore storage error
+  }
+}
+
+async function restorePrefs(): Promise<void> {
+  try {
+    const savedRec = localStorage.getItem(STORAGE_KEYS.recursive);
+    if (savedRec !== null) recursiveCheck.checked = savedRec === '1';
+
+    const savedMerge = localStorage.getItem(STORAGE_KEYS.merge);
+    if (savedMerge !== null) {
+      mergeCheck.checked = savedMerge === '1';
+      mergedNameWrap.classList.toggle('hidden', !mergeCheck.checked);
+    }
+
+    const savedInput = localStorage.getItem(STORAGE_KEYS.lastInputDir)?.trim();
+    if (savedInput) {
+      const scanned = await window.batchApi.scanFolder(
+        savedInput,
+        recursiveCheck.checked
+      );
+      if (scanned.length > 0) {
+        selectionMode = 'folder';
+        selectedFilePaths = [];
+        baseSourceDir = savedInput;
+        inputDirEl.value = savedInput;
+        modeBadge.textContent = 'Mode: 1 Folder Penuh (Folder Terakhir)';
+
+        const savedManual =
+          localStorage.getItem(STORAGE_KEYS.lastOutputManual) === '1';
+        const savedOut = localStorage.getItem(STORAGE_KEYS.lastOutputDir)?.trim();
+        if (savedManual && savedOut) {
+          outputDirEl.value = savedOut;
+          outputManuallyEdited = true;
+        } else {
+          outputDirEl.value = await window.batchApi.getDefaultOutputDir(savedInput);
+          outputManuallyEdited = false;
+        }
+        populateQueueFromEntries(scanned);
+        updateControls();
+      }
+    }
+  } catch {
+    // Ignore restore error
   }
 }
 
@@ -291,6 +379,7 @@ async function applyFileSelection(res: DroppedItemsResolution): Promise<void> {
     outputDirEl.value = await window.batchApi.getDefaultOutputDir(res.inputDir);
     outputManuallyEdited = false;
   }
+  savePrefs();
   populateQueueFromEntries(entries);
   updateControls();
 }
@@ -306,6 +395,7 @@ async function setInputFolder(folderPath: string): Promise<void> {
     outputDirEl.value = await window.batchApi.getDefaultOutputDir(folderPath);
     outputManuallyEdited = false;
   }
+  savePrefs();
   await refreshFolderQueue();
   updateControls();
 }
@@ -430,16 +520,19 @@ inputDirEl.addEventListener('input', () => {
 
 outputDirEl.addEventListener('input', () => {
   outputManuallyEdited = outputDirEl.value.trim().length > 0;
+  savePrefs();
   updateControls();
 });
 
 recursiveCheck.addEventListener('change', () => {
+  savePrefs();
   if (!isRunning && selectionMode === 'folder') {
     void refreshFolderQueue();
   }
 });
 
 mergeCheck.addEventListener('change', () => {
+  savePrefs();
   mergedNameWrap.classList.toggle('hidden', !mergeCheck.checked);
 });
 
@@ -548,4 +641,5 @@ window.batchApi.onFileUpdate(handleFileUpdate);
 window.batchApi.onLog(handleLogFallback);
 
 void window.batchApi.getFontStatus().then(updateFontStatus);
+void restorePrefs();
 updateControls();

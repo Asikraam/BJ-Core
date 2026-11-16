@@ -21,6 +21,7 @@ export interface BatchApi {
   startBatch: (options: BatchOptions) => Promise<BatchResult>;
   cancelBatch: () => Promise<boolean>;
   openFolder: (targetPath: string) => Promise<string>;
+  openFile: (filePath: string) => Promise<string>;
   onFontStatus: (cb: (status: FontCacheStatus) => void) => () => void;
   onLog: (cb: (entry: BatchLogEntry) => void) => () => void;
   onProgress: (cb: (progress: BatchProgress) => void) => () => void;
@@ -41,6 +42,7 @@ const api: BatchApi = {
   startBatch: (options) => ipcRenderer.invoke('start-batch', options),
   cancelBatch: () => ipcRenderer.invoke('cancel-batch'),
   openFolder: (targetPath) => ipcRenderer.invoke('open-folder', targetPath),
+  openFile: (filePath) => ipcRenderer.invoke('open-file', filePath),
   onFontStatus: (cb) => {
     const listener = (_e: Electron.IpcRendererEvent, status: FontCacheStatus) =>
       cb(status);

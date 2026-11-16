@@ -26,6 +26,7 @@ export interface FileStatusUpdate {
   status: QueueFileStatus;
   durationMs?: number;
   detail?: string;
+  outputPdfPath?: string;
 }
 
 export interface BatchOptions {

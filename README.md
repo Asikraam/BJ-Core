@@ -25,9 +25,11 @@
 
 ---
 
-## 🚀 What's New in `v1.1.0`
+## 🚀 What's New in `v1.2.0` & `v1.1.0`
 
-- **Single-File, Multi-File, or Full Folder Mode:** Click **`Pilih 1 File...`** to convert just one (or a few) `.wmf`/`.emf` drawings, or **`Pilih 1 Folder...`** to convert an entire directory tree. Drag-and-drop works for both single files and folders.
+- **Double-Click Any Row to Open PDF (`v1.2.0`):** Double-click any finished row in the table to open that exact converted `.pdf` file immediately in your default PDF viewer.
+- **Auto-Remember Last Folder (`v1.2.0`):** Automatically remembers your last working folder and options when you reopen the app tomorrow.
+- **Single-File, Multi-File, or Full Folder Mode (`v1.1.0`):** Click **`Pilih 1 File...`** to convert just one (or a few) `.wmf`/`.emf` drawings, or **`Pilih 1 Folder...`** to convert an entire directory tree. Drag-and-drop works for both single files and folders.
 - **Drafter-Friendly Numbered Workflow:** Clear, plain-language buttons designed for senior & everyday CAD drafters: **`1. Mulai Ubah ke PDF`** → **`2. Buka Folder Hasil PDF`**.
 - **5× Lower RAM (~110–160 MB / ~0.13 GB vs 0.76 GB in v1.0.0):** Lightweight SFNT `name`-table header indexing scans all 800+ Windows fonts in ~5 MB RAM and loads full font binaries on demand only for faces actually referenced by your drawings, with a live `RAM: ~... MB` readout in the status bar.
 - **Enhanced 2× HiDPI Vector & CAD SHX Font Quality:** Renders internal GDI/hatch placement at `dpiScale: 2` while preserving 1:1 physical PDF page bounds (`maxCanvasDimension: 16384`, `maxRecords: 1,000,000`), plus smart AutoCAD `.shx` font fallback (`simplex`, `romans`, `isocp`, `txt` → `ISOCPEUR` / `Consolas` / `Arial`).
@@ -37,13 +39,13 @@
 
 ## 📦 Download & Install
 
-Grab the latest **`v1.1.0`** package from [**GitHub Releases**](https://github.com/Asikraam/BJ-Core/releases/latest) *(or roll back anytime to [`v1.0.0`](https://github.com/Asikraam/BJ-Core/releases/tag/v1.0.0))*:
+Grab the latest **`v1.2.0`** package from [**GitHub Releases**](https://github.com/Asikraam/BJ-Core/releases/latest) *(or roll back anytime to [`v1.1.0`](https://github.com/Asikraam/BJ-Core/releases/tag/v1.1.0) / [`v1.0.0`](https://github.com/Asikraam/BJ-Core/releases/tag/v1.0.0))*:
 
 | Platform | File | Who It Is For |
 | :--- | :--- | :--- |
-| **Windows 10 / 11 (x64)** | [`BJ-PDF-Setup-v1.1.0-win-x64.exe`](https://github.com/Asikraam/BJ-Core/releases/latest) | **Recommended**: 1-click installer (Desktop & Start Menu shortcuts) |
-| **Windows 10 / 11 (x64)** | [`BJ-PDF-v1.1.0-win-x64-Portable.zip`](https://github.com/Asikraam/BJ-Core/releases/latest) | **Portable**: extract anywhere and run `BJ PDF.exe`, nothing to install |
-| **Previous Release (`v1.0.0`)** | [`Release v1.0.0`](https://github.com/Asikraam/BJ-Core/releases/tag/v1.0.0) | Previous version for rollback if needed |
+| **Windows 10 / 11 (x64)** | [`BJ-PDF-Setup-v1.2.0-win-x64.exe`](https://github.com/Asikraam/BJ-Core/releases/latest) | **Recommended**: 1-click installer (Desktop & Start Menu shortcuts) |
+| **Windows 10 / 11 (x64)** | [`BJ-PDF-v1.2.0-win-x64-Portable.zip`](https://github.com/Asikraam/BJ-Core/releases/latest) | **Portable**: extract anywhere and run `BJ PDF.exe`, nothing to install |
+| **Previous Releases** | [`v1.1.0`](https://github.com/Asikraam/BJ-Core/releases/tag/v1.1.0) · [`v1.0.0`](https://github.com/Asikraam/BJ-Core/releases/tag/v1.0.0) | Previous versions for rollback if needed |
 
 **1-command PowerShell install (no Git or Node.js needed):**
 ```powershell

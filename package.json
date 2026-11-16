@@ -1,6 +1,6 @@
 {
   "name": "bj-core",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "BJ PDF — Batch & single-file vector converter for WMF, EMF, WMZ, and EMZ metafiles to PDF",
   "main": "dist-electron/main/main.js",
   "author": "Aswal Ikraam Aritonang",

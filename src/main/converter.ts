@@ -355,8 +355,8 @@ export async function runBatchConversion(
           const durationMs = Date.now() - fileStart;
           const okDetail =
             missing.length > 0
-              ? `Selesai -> ${path.basename(targetPdfPath)} (Font disesuaikan: ${missing.join(', ')})`
-              : `Selesai -> ${path.basename(targetPdfPath)} (${info.width}x${info.height} px)`;
+              ? `Selesai -> ${path.basename(targetPdfPath)} (Font disesuaikan: ${missing.join(', ')}) [Klik 2x buka PDF]`
+              : `Selesai -> ${path.basename(targetPdfPath)} (${info.width}x${info.height} px) [Klik 2x buka PDF]`;
           emitLog('ok', 'OK', okDetail, relPath);
           callbacks.onFileUpdate?.({
             relPath,
@@ -364,6 +364,7 @@ export async function runBatchConversion(
             status: missing.length > 0 ? 'warn' : 'ok',
             durationMs,
             detail: okDetail,
+            outputPdfPath: targetPdfPath,
           });
         }
       }
