@@ -72,12 +72,33 @@ async function main() {
     const skipLog = logs.find((l) => l.tag === 'SKIP' && l.file?.includes('02_bad.wmf'));
     assert.ok(skipLog, 'Expected [SKIP] log for corrupt file');
 
+    // Test Single-File Mode (selectedFiles with 1 file only)
+    const singleOutDir = path.join(tmpRoot, 'out-single');
+    const singleResult = await runBatchConversion(
+      {
+        inputDir,
+        selectedFiles: [path.join(inputDir, '01_plan.wmf')],
+        outputDir: singleOutDir,
+        recursive: false,
+        mergePdf: false,
+      },
+      {
+        onLog: () => {},
+        onProgress: () => {},
+      }
+    );
+    assert.equal(singleResult.total, 1);
+    assert.equal(singleResult.successCount, 1);
+    const singlePdf = await readFile(path.join(singleOutDir, '01_plan.pdf'));
+    assert.equal(singlePdf.subarray(0, 5).toString('ascii'), '%PDF-');
+
     console.log('ALL TESTS PASSED:', {
       total: result.total,
       success: result.successCount,
       skip: result.skipCount,
       missingFontWarnings: result.missingFontWarnings,
       mergedPages: mergedDoc.getPageCount(),
+      singleFileSuccess: singleResult.successCount,
     });
   } finally {
     await rm(tmpRoot, { recursive: true, force: true });

@@ -2,9 +2,11 @@ import type { BatchApi } from '../main/preload';
 import type {
   BatchLogEntry,
   BatchProgress,
+  DroppedItemsResolution,
   FileStatusUpdate,
   FontCacheStatus,
   QueueFileStatus,
+  ScannedFileEntry,
 } from '../shared/types';
 
 declare global {
@@ -25,12 +27,14 @@ interface QueueRowModel {
 const dropZone = document.getElementById('dropZone') as HTMLElement;
 const inputDirEl = document.getElementById('inputDir') as HTMLInputElement;
 const outputDirEl = document.getElementById('outputDir') as HTMLInputElement;
+const browseFileBtn = document.getElementById('browseFileBtn') as HTMLButtonElement;
 const browseInputBtn = document.getElementById('browseInputBtn') as HTMLButtonElement;
 const browseOutputBtn = document.getElementById('browseOutputBtn') as HTMLButtonElement;
 const recursiveCheck = document.getElementById('recursiveCheck') as HTMLInputElement;
 const mergeCheck = document.getElementById('mergeCheck') as HTMLInputElement;
 const mergedNameWrap = document.getElementById('mergedNameWrap') as HTMLDivElement;
 const mergedFileNameEl = document.getElementById('mergedFileName') as HTMLInputElement;
+const modeBadge = document.getElementById('modeBadge') as HTMLSpanElement;
 
 const startBtn = document.getElementById('startBtn') as HTMLButtonElement;
 const cancelBtn = document.getElementById('cancelBtn') as HTMLButtonElement;
@@ -55,7 +59,13 @@ const progressMeta = document.getElementById('progressMeta') as HTMLSpanElement;
 let outputManuallyEdited = false;
 let isRunning = false;
 let lastOutputDir = '';
+let currentRamMb = 0;
 let activeFilter: 'all' | 'ok' | 'warn' | 'error' = 'all';
+
+// Selection state: either 'folder' or 'files'
+let selectionMode: 'folder' | 'files' = 'folder';
+let selectedFilePaths: string[] = [];
+let baseSourceDir = '';
 
 const queueOrder: QueueRowModel[] = [];
 const queueMap = new Map<string, QueueRowModel>();
@@ -72,15 +82,15 @@ function formatEta(ms: number | null): string {
 function formatStatusLabel(status: QueueFileStatus): string {
   switch (status) {
     case 'waiting':
-      return 'Menunggu';
+      return 'Siap';
     case 'processing':
       return 'Proses...';
     case 'ok':
-      return 'OK';
+      return 'Berhasil (OK)';
     case 'warn':
-      return 'Font Fallback';
+      return 'OK (Font Disesuaikan)';
     case 'skip':
-      return 'Skip';
+      return 'Dilewati';
     case 'error':
       return 'Gagal';
   }
@@ -147,7 +157,7 @@ function renderQueueTable(emptyMessage?: string): void {
     td.colSpan = 5;
     td.textContent =
       emptyMessage ||
-      'Pilih atau tarik folder sumber untuk menampilkan daftar file .wmf / .emf / .wmz / .emz.';
+      'Belum ada gambar dipilih. Klik tombol "Pilih 1 File..." atau "Pilih 1 Folder..." di atas.';
     tr.appendChild(td);
     queueBody.appendChild(tr);
     return;
@@ -168,48 +178,50 @@ function applyFilter(): void {
   }
 }
 
-async function refreshFileQueue(): Promise<void> {
-  const inputDir = inputDirEl.value.trim();
+function populateQueueFromEntries(entries: ScannedFileEntry[]): void {
   queueOrder.length = 0;
   queueMap.clear();
 
-  if (!inputDir) {
-    statTotal.textContent = '0';
-    statOk.textContent = '0';
-    statSkip.textContent = '0';
-    statError.textContent = '0';
-    renderQueueTable();
-    return;
-  }
-
-  const scanned = await window.batchApi.scanFolder(inputDir, recursiveCheck.checked);
-  for (const item of scanned) {
+  for (const item of entries) {
     const model: QueueRowModel = {
       relPath: item.relPath,
       format: item.ext,
       status: 'waiting',
-      detail: 'Siap dikonversi',
+      detail: 'Siap diubah ke PDF',
     };
     queueOrder.push(model);
     queueMap.set(item.relPath, model);
   }
 
-  statTotal.textContent = String(scanned.length);
+  statTotal.textContent = String(entries.length);
   statOk.textContent = '0';
   statSkip.textContent = '0';
   statError.textContent = '0';
   progressBar.style.width = '0%';
-  progressMeta.textContent = `0 / ${scanned.length} (0%) | ETA: —`;
+  const ramLabel = currentRamMb > 0 ? `RAM: ~${currentRamMb} MB | ` : '';
+  progressMeta.textContent = `${ramLabel}0 / ${entries.length} (0%) | Sisa waktu: —`;
   phaseText.textContent =
-    scanned.length > 0
-      ? `${scanned.length} file siap dikonversi`
-      : 'Tidak ada file metafile ditemukan';
+    entries.length > 0
+      ? `${entries.length} gambar siap diubah ke PDF — Klik tombol "1. Mulai Ubah ke PDF"`
+      : 'Tidak ada file .wmf / .emf ditemukan';
 
   renderQueueTable(
-    scanned.length === 0
-      ? 'Tidak ditemukan file .wmf, .emf, .wmz, atau .emz di folder ini.'
+    entries.length === 0
+      ? 'Tidak ditemukan file .wmf, .emf, .wmz, atau .emz.'
       : undefined
   );
+}
+
+async function refreshFolderQueue(): Promise<void> {
+  if (selectionMode !== 'folder') return;
+  const inputDir = inputDirEl.value.trim();
+  baseSourceDir = inputDir;
+  if (!inputDir) {
+    populateQueueFromEntries([]);
+    return;
+  }
+  const scanned = await window.batchApi.scanFolder(inputDir, recursiveCheck.checked);
+  populateQueueFromEntries(scanned);
 }
 
 function handleFileUpdate(update: FileStatusUpdate): void {
@@ -242,43 +254,84 @@ function handleFileUpdate(update: FileStatusUpdate): void {
 }
 
 function updateFontStatus(status: FontCacheStatus): void {
+  if (status.ramMb > 0) {
+    currentRamMb = status.ramMb;
+  }
   fontStatusText.classList.remove('ready', 'error');
   if (status.error) {
     fontStatusText.classList.add('error');
     fontStatusText.textContent = 'Font Windows: gagal dimuat';
   } else if (status.ready) {
     fontStatusText.classList.add('ready');
-    fontStatusText.textContent = `Font Windows: ${status.fontFileCount} siap`;
+    fontStatusText.textContent = `Font Windows: ${status.fontFileCount} siap | RAM: ~${status.ramMb} MB`;
   } else {
     fontStatusText.textContent = 'Font Windows: memuat...';
   }
 }
 
+async function applyFileSelection(res: DroppedItemsResolution): Promise<void> {
+  if (res.mode === 'folder') {
+    await setInputFolder(res.inputDir);
+    return;
+  }
+  selectionMode = 'files';
+  baseSourceDir = res.inputDir;
+  const entries = res.files || [];
+  selectedFilePaths = entries.map((e) => e.fullPath);
+
+  if (entries.length === 1) {
+    inputDirEl.value = entries[0].fullPath;
+    modeBadge.textContent = 'Mode: 1 File Gambar';
+  } else {
+    inputDirEl.value = `${entries.length} file dipilih dari ${res.inputDir}`;
+    modeBadge.textContent = `Mode: ${entries.length} File Pilihan`;
+  }
+
+  if (!outputManuallyEdited || !outputDirEl.value.trim()) {
+    outputDirEl.value = await window.batchApi.getDefaultOutputDir(res.inputDir);
+    outputManuallyEdited = false;
+  }
+  populateQueueFromEntries(entries);
+  updateControls();
+}
+
 async function setInputFolder(folderPath: string): Promise<void> {
+  selectionMode = 'folder';
+  selectedFilePaths = [];
+  baseSourceDir = folderPath;
   inputDirEl.value = folderPath;
+  modeBadge.textContent = 'Mode: 1 Folder Penuh';
+
   if (!outputManuallyEdited || !outputDirEl.value.trim()) {
     outputDirEl.value = await window.batchApi.getDefaultOutputDir(folderPath);
     outputManuallyEdited = false;
   }
+  await refreshFolderQueue();
   updateControls();
-  await refreshFileQueue();
 }
 
 function updateControls(): void {
-  const hasInput = inputDirEl.value.trim().length > 0;
-  startBtn.disabled = isRunning || !hasInput;
+  const hasSelection =
+    selectionMode === 'files'
+      ? selectedFilePaths.length > 0
+      : inputDirEl.value.trim().length > 0;
+  startBtn.disabled = isRunning || !hasSelection || queueOrder.length === 0;
   cancelBtn.disabled = !isRunning;
+  browseFileBtn.disabled = isRunning;
   browseInputBtn.disabled = isRunning;
   browseOutputBtn.disabled = isRunning;
   inputDirEl.disabled = isRunning;
   outputDirEl.disabled = isRunning;
-  recursiveCheck.disabled = isRunning;
+  recursiveCheck.disabled = isRunning || selectionMode === 'files';
   mergeCheck.disabled = isRunning;
   mergedFileNameEl.disabled = isRunning;
   openOutputBtn.disabled = !(lastOutputDir || outputDirEl.value.trim());
 }
 
 function updateProgress(p: BatchProgress): void {
+  if (p.ramMb > 0) {
+    currentRamMb = p.ramMb;
+  }
   const pct = p.total > 0 ? Math.round((p.current / p.total) * 100) : 0;
   progressBar.style.width = `${pct}%`;
 
@@ -287,29 +340,29 @@ function updateProgress(p: BatchProgress): void {
   statSkip.textContent = String(p.skipCount);
   statError.textContent = String(p.errorCount);
 
-  progressMeta.textContent = `${p.current} / ${p.total} (${pct}%) | ETA: ${formatEta(
+  progressMeta.textContent = `RAM: ~${currentRamMb} MB | ${p.current} / ${p.total} (${pct}%) | Sisa waktu: ${formatEta(
     p.etaMs
   )}`;
 
   switch (p.phase) {
     case 'scanning':
-      phaseText.textContent = 'Memindai folder & menyiapkan font...';
+      phaseText.textContent = 'Menyiapkan gambar & font...';
       break;
     case 'converting':
       phaseText.textContent = p.currentFile
-        ? `Mengonversi: ${p.currentFile}`
-        : 'Mengonversi ke PDF vektor...';
+        ? `Sedang mengubah: ${p.currentFile}`
+        : 'Sedang mengubah ke PDF...';
       break;
     case 'merging':
-      phaseText.textContent = `Menggabungkan PDF: ${p.currentFile || ''}`;
+      phaseText.textContent = `Menyatukan PDF: ${p.currentFile || ''}`;
       break;
     case 'done':
       phaseText.textContent = p.mergedOutputPath
-        ? `Selesai (${(p.elapsedMs / 1000).toFixed(1)} dtk) — Gabungan tersimpan`
-        : `Selesai dalam ${(p.elapsedMs / 1000).toFixed(1)} dtk`;
+        ? `Selesai (${(p.elapsedMs / 1000).toFixed(1)} dtk) — Klik "2. Buka Folder Hasil PDF"`
+        : `Selesai dalam ${(p.elapsedMs / 1000).toFixed(1)} dtk — Klik "2. Buka Folder Hasil PDF"`;
       break;
     case 'cancelled':
-      phaseText.textContent = 'Dibatalkan oleh pengguna';
+      phaseText.textContent = 'Dihentikan oleh pengguna';
       break;
   }
 }
@@ -321,9 +374,16 @@ function handleLogFallback(entry: BatchLogEntry): void {
 }
 
 // Event Listeners
+browseFileBtn.addEventListener('click', async () => {
+  const res = await window.batchApi.selectFiles(baseSourceDir || undefined);
+  if (res) {
+    await applyFileSelection(res);
+  }
+});
+
 browseInputBtn.addEventListener('click', async () => {
   const selected = await window.batchApi.selectFolder(
-    inputDirEl.value.trim() || undefined
+    baseSourceDir || inputDirEl.value.trim() || undefined
   );
   if (selected) {
     await setInputFolder(selected);
@@ -332,7 +392,7 @@ browseInputBtn.addEventListener('click', async () => {
 
 browseOutputBtn.addEventListener('click', async () => {
   const selected = await window.batchApi.selectFolder(
-    outputDirEl.value.trim() || inputDirEl.value.trim() || undefined
+    outputDirEl.value.trim() || baseSourceDir || undefined
   );
   if (selected) {
     outputDirEl.value = selected;
@@ -346,13 +406,25 @@ inputDirEl.addEventListener('input', () => {
   window.clearTimeout(inputDebounce);
   inputDebounce = window.setTimeout(async () => {
     const val = inputDirEl.value.trim();
+    // If user types/pastes a single .wmf/.emf path directly into the box:
+    if (/\.(wmf|emf|wmz|emz)$/i.test(val)) {
+      const res = await window.batchApi.resolveDroppedPaths([val]);
+      if (res) {
+        await applyFileSelection(res);
+        return;
+      }
+    }
+    selectionMode = 'folder';
+    selectedFilePaths = [];
+    baseSourceDir = val;
+    modeBadge.textContent = 'Mode: 1 Folder Penuh';
     if (val && !outputManuallyEdited) {
       outputDirEl.value = await window.batchApi.getDefaultOutputDir(val);
     } else if (!val && !outputManuallyEdited) {
       outputDirEl.value = '';
     }
+    await refreshFolderQueue();
     updateControls();
-    await refreshFileQueue();
   }, 220);
 });
 
@@ -362,8 +434,8 @@ outputDirEl.addEventListener('input', () => {
 });
 
 recursiveCheck.addEventListener('change', () => {
-  if (!isRunning) {
-    void refreshFileQueue();
+  if (!isRunning && selectionMode === 'folder') {
+    void refreshFolderQueue();
   }
 });
 
@@ -391,43 +463,50 @@ dropZone.addEventListener('drop', async (e) => {
   if (isRunning) return;
   const files = e.dataTransfer?.files;
   if (!files || files.length === 0) return;
-  const rawPath = window.batchApi.getPathForFile(files[0]);
-  const folderPath = await window.batchApi.resolveDroppedPath(rawPath);
-  if (folderPath) {
-    await setInputFolder(folderPath);
+  const rawPaths: string[] = [];
+  for (let i = 0; i < files.length; i++) {
+    rawPaths.push(window.batchApi.getPathForFile(files[i]));
+  }
+  const resolved = await window.batchApi.resolveDroppedPaths(rawPaths);
+  if (resolved) {
+    await applyFileSelection(resolved);
   } else {
-    phaseText.textContent = 'Item yang ditarik bukan folder atau file yang valid.';
+    phaseText.textContent =
+      'File yang ditarik bukan gambar .wmf / .emf atau folder yang valid.';
   }
 });
 
 startBtn.addEventListener('click', async () => {
-  const inputDir = inputDirEl.value.trim();
-  if (!inputDir || isRunning) return;
+  if (isRunning || queueOrder.length === 0) return;
+
+  const effectiveInputDir =
+    selectionMode === 'files' ? baseSourceDir : inputDirEl.value.trim();
+  if (!effectiveInputDir) return;
 
   const outputDir =
     outputDirEl.value.trim() ||
-    (await window.batchApi.getDefaultOutputDir(inputDir));
+    (await window.batchApi.getDefaultOutputDir(effectiveInputDir));
   outputDirEl.value = outputDir;
 
   isRunning = true;
   lastOutputDir = outputDir;
   updateControls();
 
-  // Reset row status to waiting before run
   for (const row of queueOrder) {
     row.status = 'waiting';
     row.durationMs = undefined;
-    row.detail = 'Menunggu...';
+    row.detail = 'Menunggu giliran...';
     updateRowCells(row);
   }
 
   try {
     const result = await window.batchApi.startBatch({
-      inputDir,
+      inputDir: effectiveInputDir,
+      selectedFiles: selectionMode === 'files' ? selectedFilePaths : undefined,
       outputDir,
       recursive: recursiveCheck.checked,
       mergePdf: mergeCheck.checked,
-      mergedFileName: mergedFileNameEl.value.trim() || 'BJ-Core_Gabungan.pdf',
+      mergedFileName: mergedFileNameEl.value.trim() || 'BJ-PDF_Gabungan.pdf',
     });
     lastOutputDir = result.outputDir;
   } catch (err) {

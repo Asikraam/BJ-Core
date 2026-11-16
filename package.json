@@ -1,9 +1,9 @@
 {
   "name": "bj-core",
-  "version": "1.0.0",
-  "description": "BJ-Core — Batch vector converter for WMF, EMF, WMZ, and EMZ metafiles to PDF",
+  "version": "1.1.0",
+  "description": "BJ PDF — Batch & single-file vector converter for WMF, EMF, WMZ, and EMZ metafiles to PDF",
   "main": "dist-electron/main/main.js",
-  "author": "BJ-Core",
+  "author": "Aswal Ikraam Aritonang",
   "license": "Apache-2.0",
   "scripts": {
     "dev:renderer": "vite",
@@ -27,14 +27,14 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
-    "electron": "^44.9.3",
+    "electron": "44.9.3",
     "electron-builder": "^26.18.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.8"
   },
   "build": {
     "appId": "com.aswal.bj-core",
-    "productName": "BJ-Core",
+    "productName": "BJ PDF",
     "copyright": "Copyright © 2026 Aswal Ikraam Aritonang",
     "asar": true,
     "directories": {
@@ -44,11 +44,19 @@
     "files": [
       "dist-electron/**/*",
       "dist-renderer/**/*",
+      "build/icon.ico",
+      "build/icon.png",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "build/icon.ico",
+        "to": "icon.ico"
+      }
+    ],
     "win": {
-      "icon": "build/icon.png",
-      "artifactName": "BJ-Core-v${version}-win-x64-Portable.${ext}",
+      "icon": "build/icon.ico",
+      "artifactName": "BJ-PDF-v${version}-win-x64-Portable.${ext}",
       "target": [
         {
           "target": "nsis",
@@ -69,9 +77,9 @@
       "perMachine": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "BJ-Core",
+      "shortcutName": "BJ PDF",
       "runAfterFinish": true,
-      "artifactName": "BJ-Core-Setup-v${version}-win-x64.${ext}"
+      "artifactName": "BJ-PDF-Setup-v${version}-win-x64.${ext}"
     }
   }
 }

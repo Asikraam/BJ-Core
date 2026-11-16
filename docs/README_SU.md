@@ -1,89 +1,87 @@
 <div align="center">
 
-<img src="../assets/icon.png" alt="Ikon BJ-Core" width="96" />
+<img src="../assets/icon.png" alt="Ikon BJ PDF" width="96" />
 
-# BJ-Core — Pituduh Cara Maké (Basa Sunda)
+# BJ PDF — Cara Make Aplikasi (Basa Sunda Sapopoe)
 
-**Konverter Batch Gambar WMF / EMF kana PDF Véktor dina Windows**  
-*Pilih hiji folder → sakumna gambar `.wmf`, `.emf`, `.wmz`, jeung `.emz` langsung robah jadi file PDF véktor 1:1 anu lénglang tur teu pecah.*
+**Alat paranti ngubah gambar WMF / EMF jadi PDF anu herang jeung teu pecah di Windows**  
+*Bisa milih 1 file gambar hungkul, atawa langsung 1 folder pinuh. Teu ribet, tinggal klik langsung jadi PDF.*
 
-[English (Default)](../README.md) · [Bahasa Indonesia](README_ID.md) · **Basa Sunda** · [Changelog](../CHANGELOG.md)
+[English (Default)](../README.md) · [Panduan Bahasa Indonesia](README_ID.md) · **Basa Sunda** · [Changelog](../CHANGELOG.md)
 
 <br />
 
-<img src="../assets/screenshot.png" alt="Tampilan Utama BJ-Core" width="100%" />
+<img src="../assets/screenshot.png" alt="Tampilan BJ PDF v1.1.0" width="100%" />
 
 </div>
 
 ---
 
-## 1. Cara Masang Aplikasi
+## 1. Cara Download & Masang di Laptop
 
-Pilih salah sahiji cara di handap tina kaca [**GitHub Releases**](https://github.com/Asikraam/BJ-Core/releases/latest):
+Buka halaman [**GitHub Releases**](https://github.com/Asikraam/BJ-Core/releases/latest), terus pilih salah sahiji:
 
-### Pilihan A — Installer 1-Klik (Pangpraktisna)
-1. Undeur (download) file **`BJ-Core-Setup-v1.0.0-win-x64.exe`**.
-2. Klik dua kali file éta. Aplikasi bakal langsung dipasang sarta nyieun jalan pintas (*shortcut*) **BJ-Core** dina Desktop jeung Start Menu.
-3. Upami kaluar peringatan *Windows protected your PC (SmartScreen)*, klik **More info** teras klik **Run anyway**.
+### Cara Panggampangna (Installer 1-Klik)
+1. Download file **`BJ-PDF-Setup-v1.1.0-win-x64.exe`**.
+2. Klik dua kali file eta, engke otomatis masang sorangan jeung langsung aya ikon **BJ PDF** dina Desktop.
+3. Lamun aya tulisan biru *Windows protected your PC*, teu kudu reuwas: klik we tulisan **More info**, terus pencet tombol **Run anyway**.
 
-### Pilihan B — Vérsi Portable (Teu Kedah Dipasang)
-1. Undeur file **`BJ-Core-v1.0.0-win-x64-Portable.zip`**.
-2. Ékstrak ZIP éta ka folder mana waé (contona kana Flashdisk atawa `D:\Tools\BJ-Core`).
-3. Jalankeun **`BJ-Core.exe`** langsung.
+### Mun Rek Pake Versi Portable (Tanpa Install)
+1. Download **`BJ-PDF-v1.1.0-win-x64-Portable.zip`**.
+2. Ekstrak folder ZIP-na ka mana wae (bisa dina Flashdisk atawa Data `D:`), terus buka **`BJ PDF.exe`**.
 
-### Pilihan C — Masang Gancang via PowerShell (1 Baris Paréntah)
-Buka PowerShell teras témpélkeun paréntah ieu:
-```powershell
-$r = Invoke-RestMethod "https://api.github.com/repos/Asikraam/BJ-Core/releases/latest"; $u = ($r.assets | Where-Object { $_.name -like "*Setup*.exe" } | Select-Object -First 1).browser_download_url; $f = "$env:TEMP\BJ-Core-Setup.exe"; Invoke-WebRequest $u -OutFile $f; Start-Process $f
-```
+> **Catatan mun rek balik deui ka versi heubeul (`v1.0.0`):**  
+> Mun ngarasa leuwih cocok make versi anu pertama, tinggal download deui di halaman [**Release v1.0.0**](https://github.com/Asikraam/BJ-Core/releases/tag/v1.0.0).
 
 ---
 
-## 2. Tahapan Cara Maké (Léngkah demi Léngkah)
+## 2. Cara Make (Gampang Pisan, Ngan 3 Langkah)
 
-### Léngkah 1 — Buka BJ-Core & Pariksa Status Font
-- Buka aplikasi **BJ-Core** tina Desktop atawa Start Menu.
-- Tingali juru katuhu luhur: antosan dugi ka tulisanana robah jadi **`Font Windows: ... siap`** (warna héjo). Éta tandana sakumna font Windows parantos siap dina mémori supados téks gambar CAD henteu gésér nalika dijadikeun PDF.
+Aplikasi **BJ PDF** mah dijieun husus ngarah babari dipake ku saha wae, kaasup drafter senior. Teu kudu nyetel nu aneh-aneh:
 
-### Léngkah 2 — Pilih Folder Sumber Gambar
-Aya dua cara pikeun ngasupkeun folder anu eusina file `.wmf`, `.emf`, `.wmz`, atawa `.emz`:
-1. **Sered & Léos (Drag & Drop):** Sered langsung folder gambar tina Windows Explorer ka bagian luhur jandéla **BJ-Core**.
-2. **Tombol Browse:** Klik tombol **`Browse...`** di gigireun kolom **Folder Sumber**, teras pilih folder tempat nyimpen file WMF/EMF.
+### Langkah 1 — Buka BJ PDF
+- Klik dua kali ikon **BJ PDF** dina Desktop.
+- Di luhur katuhu aya tulisan **`Font Windows: ... siap`** warna hejo. Eta hartina sakabeh huruf di laptop geus siap ngarah tulisan dina gambar CAD teu ngageser atawa barobah pas jadi PDF.
 
-Sabada folder dipilih:
-- Kolom **Folder Tujuan** otomatis kaeusian ku `<Folder Sumber>\PDF_Output` (tiasa diganti manual upami hoyong disimpen di folder sanés).
-- Tabél **Antrean & Log File** langsung némbongkeun daptar file anu kapanggih katut jumlah totalna.
+### Langkah 2 — Pilih Gambar (Bisa 1 File Hungkul atawa 1 Folder)
+Tingali tombol di belah katuhu luhur:
+- **Lamun rek ngubah 1 gambar hungkul (atawa sababaraha gambar pilihan):**  
+  Pencet tombol **`Pilih 1 File...`**, terus klik file `.wmf` atawa `.emf` nu rek diubah.
+- **Lamun rek ngubah kabeh gambar dina 1 folder sakaligus:**  
+  Pencet tombol **`Pilih 1 Folder...`**, terus pilih folderna.
+- **Atawa cara paling cepet:** sered (*drag*) we langsung file gambarna atawa folderna ti Windows Explorer ka jero aplikasi **BJ PDF**.
 
-### Léngkah 3 — Atur Pilihan Konvérsi
-- **`[x] Proses Subfolder`**: Céntang upami di jero folder utama aya subfolder deui (contona `Detail\`, `Potongan\`, `Lampiran\`). Susunan folder di jero `PDF_Output` bakal dijieun sarua persis jeung folder aslina.
-- **`[ ] Gabungkan semua PDF (pdf-lib)`**: Céntang upami salian ti PDF masing-masing gambar, anjeun ogé hoyong **1 file PDF gabungan** anu ngahijikeun sadaya kaca gambar sacara ngaruntuy (ngaran file bawaan: `BJ-Core_Gabungan.pdf`, tiasa diganti).
+*Catetan tambahan:*
+- Kolom **Simpan PDF ke** mah otomatis kaeusian ku folder `PDF_Output`. Jadi hasil PDF-na moal pacampur jeung file WMF aslina.
+- Mun hayang sakabeh gambar dihijikeun jadi 1 file PDF gabungan, tinggal centang kotak **`Satukan semua jadi 1 file PDF`**.
 
-### Léngkah 4 — Jalankeun Konvérsi Batch
-1. Klik tombol bulao **`Convert ke PDF`**.
-2. Ilikan jalanna prosés dina tabél jeung baris status di handap:
-   - Unggal baris némbongkeun parobahan status (`Menunggu` → `Proses...` → `OK`), lila waktu prosés dina milidetik (`ms`), sarta ukuran gambar.
-   - Baris panghandapna némbongkeun *progress bar*, perséntase, jeung **ETA** (kira-kira waktu nu nyésa).
-   - Upami hoyong ngeureunkeun prosés di tengah jalan, klik tombol **`Batal`**.
-
-### Léngkah 5 — Buka Folder Hasil PDF
-- Saatos status di juru kénca handap robah jadi **`Selesai`**, klik tombol **`Buka Folder Hasil`**.
-- Windows Explorer bakal langsung muka folder `PDF_Output` tempat nyimpen sadaya hasil PDF véktor.
+### Langkah 3 — Pencet "1. Mulai Ubah ke PDF" terus "2. Buka Folder Hasil PDF"
+1. Pencet tombol biru **`1. Mulai Ubah ke PDF`**.
+2. Tungguan sakeudeung nepi ka tulisan di handap jadi **`Selesai`**.
+3. Langsung pencet tombol hejo **`2. Buka Folder Hasil PDF`** — folder tempat file PDF-na bakal langsung kabuka otomatis!
 
 ---
 
-## 3. Harti Status dina Tabél Antrean
+## 3. Sabaraha Makan RAM-na? Beneran Alus Kualitas PDF-na?
 
-| Status | Warna | Harti & Pituduh |
+- **Irit Memori (RAM):**  
+  Dina versi `v1.1.0`, **BJ PDF** ngan make RAM sakitar **`~110 MB – 160 MB` (`0.11 – 0.16 GB`)** pas hurung jeung keur ngubah gambar (bisa ditingali langsung angkanna dina baris paling handap aplikasi: `RAM: ~... MB`). Jadi enteng pisan, moal nyieun laptop ngelag sanajan bari muka AutoCAD.
+- **Kualitas Gambar Tetep Tajem (2x HiDPI Vector):**  
+  Gambar WMF/EMF teh lain difoto jadi gambar buram, tapi digambar ulang jadi garis vektor PDF (`dpiScale: 2`, resolusi kanvas nepi ka `16384 px`, jeung nepi ka `1.000.000` garis per gambar). Rek di-zoom nepi ka 6400% oge garis, arsiran (*hatch*), jeung hurufna tetep herang. Malah lamun aya huruf AutoCAD `.shx` (`simplex`, `romans`, `isocp`, `txt`) nu euweuh di Windows, otomatis dipilihkan huruf teknik nu bersih ngarah rapih.
+
+---
+
+## 4. Harti Tulisan Status dina Tabel
+
+| Status | Warna | Hartina |
 | :--- | :--- | :--- |
-| **`Menunggu`** | Kulawu | File parantos asup kana daptar antrean sarta siap dikonvérsi. |
-| **`Proses...`** | Bulao | File keur dikonvérsi jadi PDF véktor. |
-| **`OK`** | Héjo | Hasil dikonvérsi jadi PDF véktor 1:1 sarta sakumna font anu dipaké aya dina Windows. |
-| **`Font Fallback`** | Konéng kolot | PDF parantos jadi, nanging aya font dina jero file WMF/EMF anu teu acan dipasang dina PC Windows (ngaran font nu kurang ditulis dina kolom *Keterangan*). Pasang heula file `.ttf` font éta kana `C:\Windows\Fonts` upami wangun aksarana kedah 100% sarua. |
-| **`Skip`** | Konéng kolot | File diliwat margi ruksak atawa sanés file metafile WMF/EMF anu bener. |
-| **`Gagal`** | Beureum | Aya gangguan nalika maca atawa nulis file (pariksa kateranganana dina kolom *Keterangan*). |
-
-> **Tip Nyaring Daptar File:** Anggo tab **`Semua`**, **`Sukses`**, **`Peringatan/Skip`**, atawa **`Gagal`** di luhureun tabél katuhu pikeun milah file saatos ngolah ratusan gambar sakaligus.
+| **`Siap`** | Kulawu | Gambar geus asup daptar, tinggal pencet tombol *1. Mulai Ubah ke PDF*. |
+| **`Proses...`** | Biru | Gambar keur diubah jadi PDF. |
+| **`Berhasil (OK)`** | Hejo | Gambar geus jadi PDF vektor nu herang jeung hurufna lengkap. |
+| **`OK (Font Disesuaikan)`** | Oranye | PDF geus jadi jeung rapih, ngan di jero gambarna aya jenis huruf nu can dipasang di laptop (geus otomatis disaluyukeun ku aplikasi). |
+| **`Dilewati`** | Oranye | File diliwat sabab file-na ruksak atawa lain gambar WMF/EMF. |
+| **`Gagal`** | Beureum | File gagal diubah (pedaranana aya dina kolom *Keterangan Hasil*). |
 
 ---
 
-Lisénsi [Apache-2.0](../LICENSE) © 2026 Aswal Ikraam Aritonang.
+Lisensi [Apache-2.0](../LICENSE) © 2026 Aswal Ikraam Aritonang.

@@ -7,42 +7,45 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"
     />
-    <title>BJ-Core — Batch WMF/EMF ke PDF Vektor</title>
+    <title>BJ PDF — Ubah Gambar WMF/EMF ke PDF</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <div class="app-window">
-      <!-- Baris 1: Input / Output & Opsi -->
+      <!-- Baris 1: Pilih File / Folder Sumber & Tujuan -->
       <section id="dropZone" class="panel io-panel">
         <div class="panel-header">
-          <h1 class="panel-title">BJ-Core — Konverter Batch WMF/EMF ke PDF Vektor</h1>
+          <h1 class="panel-title">BJ PDF — Ubah Gambar WMF / EMF Jadi PDF Tajam</h1>
           <span id="fontStatusText" class="font-status mono">Font Windows: memuat...</span>
         </div>
 
         <div class="io-grid">
-          <label class="io-label" for="inputDir">Folder Sumber</label>
+          <label class="io-label" for="inputDir">Sumber Gambar</label>
           <div class="io-input-row">
             <input
               id="inputDir"
               type="text"
-              placeholder="Pilih atau tarik folder berisi file .wmf / .emf / .wmz / .emz ke sini"
+              placeholder="Klik 'Pilih 1 File' atau 'Pilih 1 Folder' di kanan (atau tarik ke sini)"
               spellcheck="false"
             />
-            <button id="browseInputBtn" class="btn btn-secondary" type="button">
-              Browse...
+            <button id="browseFileBtn" class="btn btn-pick" type="button">
+              Pilih 1 File...
+            </button>
+            <button id="browseInputBtn" class="btn btn-pick" type="button">
+              Pilih 1 Folder...
             </button>
           </div>
 
-          <label class="io-label" for="outputDir">Folder Tujuan</label>
+          <label class="io-label" for="outputDir">Simpan PDF ke</label>
           <div class="io-input-row">
             <input
               id="outputDir"
               type="text"
-              placeholder="Otomatis: <Folder Sumber>\PDF_Output"
+              placeholder="Otomatis masuk ke folder PDF_Output"
               spellcheck="false"
             />
             <button id="browseOutputBtn" class="btn btn-secondary" type="button">
-              Browse...
+              Ganti Folder Tujuan...
             </button>
           </div>
         </div>
@@ -50,61 +53,61 @@
         <div class="options-bar">
           <label class="checkbox-label">
             <input id="recursiveCheck" type="checkbox" checked />
-            <span>Proses Subfolder</span>
+            <span>Ikutkan isi Subfolder</span>
           </label>
 
           <label class="checkbox-label">
             <input id="mergeCheck" type="checkbox" />
-            <span>Gabungkan semua PDF (pdf-lib)</span>
+            <span>Satukan semua jadi 1 file PDF</span>
           </label>
 
           <div id="mergedNameWrap" class="merged-name-wrap hidden">
             <input
               id="mergedFileName"
               type="text"
-              value="BJ-Core_Gabungan.pdf"
+              value="BJ-PDF_Gabungan.pdf"
               title="Nama file PDF gabungan"
               spellcheck="false"
             />
           </div>
 
-          <span class="drop-hint">Mendukung drag-and-drop folder</span>
+          <span id="modeBadge" class="drop-hint">Bisa tarik 1 file atau 1 folder langsung ke kotak ini</span>
         </div>
       </section>
 
-      <!-- Baris 2: Action & Summary Bar -->
+      <!-- Baris 2: Tombol Utama Mudah Dipahami Drafter -->
       <section class="action-bar">
         <div class="action-buttons">
-          <button id="startBtn" class="btn btn-primary" type="button" disabled>
-            Convert ke PDF
+          <button id="startBtn" class="btn btn-primary btn-lg" type="button" disabled>
+            1. Mulai Ubah ke PDF
           </button>
-          <button id="cancelBtn" class="btn btn-secondary" type="button" disabled>
-            Batal
+          <button id="cancelBtn" class="btn btn-secondary btn-lg" type="button" disabled>
+            Stop / Batal
           </button>
-          <button id="openOutputBtn" class="btn btn-secondary" type="button" disabled>
-            Buka Folder Hasil
+          <button id="openOutputBtn" class="btn btn-open btn-lg" type="button" disabled>
+            2. Buka Folder Hasil PDF
           </button>
         </div>
 
         <div class="summary-counters mono">
           <span>Total: <strong id="statTotal">0</strong></span>
           <span class="sep">|</span>
-          <span class="c-ok">Sukses: <strong id="statOk">0</strong></span>
+          <span class="c-ok">Berhasil: <strong id="statOk">0</strong></span>
           <span class="sep">|</span>
-          <span class="c-warn">Skip: <strong id="statSkip">0</strong></span>
+          <span class="c-warn">Lewat: <strong id="statSkip">0</strong></span>
           <span class="sep">|</span>
           <span class="c-err">Gagal: <strong id="statError">0</strong></span>
         </div>
       </section>
 
-      <!-- Baris 3: Explorer File Queue & Status Table -->
+      <!-- Baris 3: Daftar File Gambar -->
       <section class="panel table-panel">
         <div class="table-toolbar">
-          <span class="table-heading">Antrean &amp; Log File</span>
+          <span class="table-heading">Daftar Gambar yang Akan Diubah ke PDF</span>
           <div class="filter-tabs" role="tablist" aria-label="Filter status">
             <button class="filter-tab active" data-filter="all" type="button">Semua</button>
-            <button class="filter-tab" data-filter="ok" type="button">Sukses</button>
-            <button class="filter-tab" data-filter="warn" type="button">Peringatan/Skip</button>
+            <button class="filter-tab" data-filter="ok" type="button">Berhasil</button>
+            <button class="filter-tab" data-filter="warn" type="button">Catatan Font / Lewat</button>
             <button class="filter-tab" data-filter="error" type="button">Gagal</button>
           </div>
         </div>
@@ -113,17 +116,17 @@
           <table class="queue-table">
             <thead>
               <tr>
-                <th class="col-name">Nama File</th>
+                <th class="col-name">Nama File Gambar</th>
                 <th class="col-type">Tipe</th>
                 <th class="col-status">Status</th>
-                <th class="col-dur">Durasi</th>
-                <th class="col-detail">Keterangan</th>
+                <th class="col-dur">Waktu</th>
+                <th class="col-detail">Keterangan Hasil</th>
               </tr>
             </thead>
             <tbody id="queueBody">
               <tr class="empty-row">
                 <td colspan="5">
-                  Pilih atau tarik folder sumber untuk menampilkan daftar file .wmf / .emf / .wmz / .emz.
+                  Belum ada gambar dipilih. Klik tombol <strong>Pilih 1 File...</strong> atau <strong>Pilih 1 Folder...</strong> di atas.
                 </td>
               </tr>
             </tbody>
@@ -131,14 +134,14 @@
         </div>
       </section>
 
-      <!-- Baris 4: Bottom Status Bar -->
+      <!-- Baris 4: Status Bar & Indikator RAM -->
       <footer class="status-bar">
         <div class="progress-track" aria-label="Progres konversi">
           <div id="progressBar" class="progress-fill" style="width: 0%"></div>
         </div>
         <div class="status-meta">
-          <span id="phaseText" class="status-text">Siap</span>
-          <span id="progressMeta" class="status-numbers mono">0 / 0 (0%) | ETA: —</span>
+          <span id="phaseText" class="status-text">Siap digunakan</span>
+          <span id="progressMeta" class="status-numbers mono">RAM: — MB | 0 / 0 (0%) | Sisa waktu: —</span>
         </div>
       </footer>
     </div>

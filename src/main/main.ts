@@ -1,8 +1,13 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
+import { existsSync } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import path from 'node:path';
-import type { BatchOptions } from '../shared/types';
-import { runBatchConversion, scanFolderMetafiles } from './converter';
+import type { BatchOptions, DroppedItemsResolution } from '../shared/types';
+import {
+  buildEntriesFromFiles,
+  runBatchConversion,
+  scanFolderMetafiles,
+} from './converter';
 import { ensureSystemFontsLoaded, getFontCacheStatus } from './fontIndex';
 
 let mainWindow: BrowserWindow | null = null;
@@ -10,14 +15,29 @@ let activeAbortController: AbortController | null = null;
 
 const isSmokeTest = process.argv.includes('--smoke-test');
 
+app.setName('BJ PDF');
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.aswal.bj-core');
+}
+
+function resolveAppIconPath(): string | undefined {
+  const candidates = [
+    path.join(__dirname, '..', '..', 'build', 'icon.ico'),
+    path.join(__dirname, '..', '..', 'build', 'icon.png'),
+    path.join(process.resourcesPath || '', 'icon.ico'),
+  ];
+  return candidates.find((p) => existsSync(p));
+}
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 820,
-    height: 580,
-    minWidth: 740,
-    minHeight: 500,
+    width: 860,
+    height: 600,
+    minWidth: 760,
+    minHeight: 520,
     show: !isSmokeTest,
-    title: 'BJ-Core',
+    title: 'BJ PDF — Ubah Gambar WMF/EMF ke PDF',
+    icon: resolveAppIconPath(),
     autoHideMenuBar: true,
     backgroundColor: '#F3F3F3',
     webPreferences: {
@@ -45,6 +65,7 @@ function createWindow(): void {
             uiState,
             fontFileCount: fonts.status.fontFileCount,
             familyCount: fonts.status.familyCount,
+            ramMb: fonts.status.ramMb,
           })
         );
         app.exit(0);
@@ -78,10 +99,36 @@ function warmupSystemFonts(): void {
 }
 
 function registerIpcHandlers(): void {
+  ipcMain.handle(
+    'select-files',
+    async (_event, defaultPath?: string): Promise<DroppedItemsResolution | null> => {
+      if (!mainWindow) return null;
+      const result = await dialog.showOpenDialog(mainWindow, {
+        title: 'Pilih 1 atau Beberapa File Gambar WMF / EMF',
+        defaultPath: defaultPath || undefined,
+        properties: ['openFile', 'multiSelections'],
+        filters: [
+          {
+            name: 'Gambar WMF / EMF (.wmf, .emf, .wmz, .emz)',
+            extensions: ['wmf', 'emf', 'wmz', 'emz'],
+          },
+        ],
+      });
+      if (result.canceled || result.filePaths.length === 0) return null;
+      const { baseDir, entries } = buildEntriesFromFiles(result.filePaths);
+      if (entries.length === 0) return null;
+      return {
+        mode: 'files',
+        inputDir: baseDir,
+        files: entries,
+      };
+    }
+  );
+
   ipcMain.handle('select-folder', async (_event, defaultPath?: string) => {
     if (!mainWindow) return null;
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: 'Pilih Folder',
+      title: 'Pilih Folder Gambar WMF / EMF',
       defaultPath: defaultPath || undefined,
       properties: ['openDirectory', 'createDirectory'],
     });
@@ -89,15 +136,30 @@ function registerIpcHandlers(): void {
     return result.filePaths[0];
   });
 
-  ipcMain.handle('resolve-dropped-path', async (_event, rawPath: string) => {
-    if (!rawPath) return null;
-    try {
-      const info = await stat(rawPath);
-      return info.isDirectory() ? rawPath : path.dirname(rawPath);
-    } catch {
-      return null;
+  ipcMain.handle(
+    'resolve-dropped-paths',
+    async (_event, rawPaths: string[]): Promise<DroppedItemsResolution | null> => {
+      if (!Array.isArray(rawPaths) || rawPaths.length === 0) return null;
+      try {
+        const firstStat = await stat(rawPaths[0]);
+        if (firstStat.isDirectory()) {
+          return {
+            mode: 'folder',
+            inputDir: rawPaths[0],
+          };
+        }
+        const { baseDir, entries } = buildEntriesFromFiles(rawPaths);
+        if (entries.length === 0) return null;
+        return {
+          mode: 'files',
+          inputDir: baseDir,
+          files: entries,
+        };
+      } catch {
+        return null;
+      }
     }
-  });
+  );
 
   ipcMain.handle('get-default-output-dir', (_event, inputDir: string) => {
     if (!inputDir?.trim()) return '';
@@ -173,7 +235,6 @@ function registerIpcHandlers(): void {
 app.whenReady().then(() => {
   registerIpcHandlers();
   createWindow();
-  // Load and cache Windows system fonts immediately when the app starts
   warmupSystemFonts();
 
   app.on('activate', () => {

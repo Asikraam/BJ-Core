@@ -52,8 +52,25 @@ async function renderIcon() {
   const png = (await win.webContents.capturePage()).toPNG();
   await writeFile(path.join(buildDir, 'icon.png'), png);
   await writeFile(path.join(assetsDir, 'icon.png'), png);
+
+  // Build valid 256x256 PNG-backed Windows .ico file
+  const icoHeader = Buffer.alloc(22);
+  icoHeader.writeUInt16LE(0, 0); // Reserved
+  icoHeader.writeUInt16LE(1, 2); // Type 1 = ICO
+  icoHeader.writeUInt16LE(1, 4); // 1 image
+  icoHeader.writeUInt8(0, 6); // width 256 (0 means 256)
+  icoHeader.writeUInt8(0, 7); // height 256 (0 means 256)
+  icoHeader.writeUInt8(0, 8); // color palette
+  icoHeader.writeUInt8(0, 9); // reserved
+  icoHeader.writeUInt16LE(1, 10); // color planes
+  icoHeader.writeUInt16LE(32, 12); // bits per pixel
+  icoHeader.writeUInt32LE(png.length, 14); // image byte size
+  icoHeader.writeUInt32LE(22, 18); // offset of PNG data
+  const icoBytes = Buffer.concat([icoHeader, png]);
+  await writeFile(path.join(buildDir, 'icon.ico'), icoBytes);
+
   win.destroy();
-  console.log('icon.png', png.length, 'bytes');
+  console.log('icon.png & icon.ico', png.length, 'bytes');
 }
 
 async function prepareDemoFolder() {

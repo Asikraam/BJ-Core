@@ -9,8 +9,15 @@ export type QueueFileStatus =
   | 'error';
 
 export interface ScannedFileEntry {
+  fullPath: string;
   relPath: string;
   ext: string;
+}
+
+export interface DroppedItemsResolution {
+  mode: 'files' | 'folder';
+  inputDir: string;
+  files?: ScannedFileEntry[];
 }
 
 export interface FileStatusUpdate {
@@ -23,6 +30,7 @@ export interface FileStatusUpdate {
 
 export interface BatchOptions {
   inputDir: string;
+  selectedFiles?: string[];
   outputDir: string;
   recursive: boolean;
   mergePdf: boolean;
@@ -35,6 +43,7 @@ export interface FontCacheStatus {
   fontFileCount: number;
   familyCount: number;
   loadTimeMs: number;
+  ramMb: number;
   error?: string;
 }
 
@@ -56,6 +65,7 @@ export interface BatchProgress {
   missingFontWarnings: number;
   elapsedMs: number;
   etaMs: number | null;
+  ramMb: number;
   currentFile?: string;
   mergedOutputPath?: string;
 }

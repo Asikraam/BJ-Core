@@ -4,14 +4,16 @@ import type {
   BatchOptions,
   BatchProgress,
   BatchResult,
+  DroppedItemsResolution,
   FileStatusUpdate,
   FontCacheStatus,
   ScannedFileEntry,
 } from '../shared/types';
 
 export interface BatchApi {
+  selectFiles: (defaultPath?: string) => Promise<DroppedItemsResolution | null>;
   selectFolder: (defaultPath?: string) => Promise<string | null>;
-  resolveDroppedPath: (rawPath: string) => Promise<string | null>;
+  resolveDroppedPaths: (rawPaths: string[]) => Promise<DroppedItemsResolution | null>;
   getPathForFile: (file: File) => string;
   getDefaultOutputDir: (inputDir: string) => Promise<string>;
   scanFolder: (inputDir: string, recursive: boolean) => Promise<ScannedFileEntry[]>;
@@ -26,9 +28,10 @@ export interface BatchApi {
 }
 
 const api: BatchApi = {
+  selectFiles: (defaultPath) => ipcRenderer.invoke('select-files', defaultPath),
   selectFolder: (defaultPath) => ipcRenderer.invoke('select-folder', defaultPath),
-  resolveDroppedPath: (rawPath) =>
-    ipcRenderer.invoke('resolve-dropped-path', rawPath),
+  resolveDroppedPaths: (rawPaths) =>
+    ipcRenderer.invoke('resolve-dropped-paths', rawPaths),
   getPathForFile: (file) => webUtils.getPathForFile(file),
   getDefaultOutputDir: (inputDir) =>
     ipcRenderer.invoke('get-default-output-dir', inputDir),

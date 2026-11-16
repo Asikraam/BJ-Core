@@ -11,12 +11,15 @@ import type {
   ScannedFileEntry,
 } from '../shared/types';
 import {
+  buildSmartFontFamilyMap,
   ensureSystemFontsLoaded,
+  getProcessRamMb,
   isFontAvailable,
+  resolveFontsForConversion,
   type CachedFontStore,
 } from './fontIndex';
 
-const SUPPORTED_EXTS = new Set(['.wmf', '.emf', '.wmz', '.emz']);
+export const SUPPORTED_EXTS = new Set(['.wmf', '.emf', '.wmz', '.emz']);
 const naturalCollator = new Intl.Collator(undefined, {
   numeric: true,
   sensitivity: 'base',
@@ -69,9 +72,27 @@ export async function scanFolderMetafiles(
   const resolved = path.resolve(dir);
   const fullPaths = await collectMetafiles(resolved, recursive);
   return fullPaths.map((fullPath) => ({
+    fullPath,
     relPath: path.relative(resolved, fullPath),
     ext: path.extname(fullPath).replace('.', '').toUpperCase(),
   }));
+}
+
+export function buildEntriesFromFiles(filePaths: string[]): {
+  baseDir: string;
+  entries: ScannedFileEntry[];
+} {
+  const valid = filePaths
+    .map((p) => path.resolve(p))
+    .filter((p) => SUPPORTED_EXTS.has(path.extname(p).toLowerCase()));
+  valid.sort((a, b) => naturalCollator.compare(path.basename(a), path.basename(b)));
+  const baseDir = valid.length > 0 ? path.dirname(valid[0]) : '';
+  const entries: ScannedFileEntry[] = valid.map((fullPath) => ({
+    fullPath,
+    relPath: path.basename(fullPath),
+    ext: path.extname(fullPath).replace('.', '').toUpperCase(),
+  }));
+  return { baseDir, entries };
 }
 
 function findMissingFonts(
@@ -126,7 +147,7 @@ export async function mergePdfFiles(
 }
 
 /**
- * Executes batch conversion of `.wmf`, `.emf`, `.wmz`, and `.emz` files to vector PDF.
+ * Executes batch or single-file conversion of `.wmf`, `.emf`, `.wmz`, and `.emz` files to vector PDF.
  */
 export async function runBatchConversion(
   options: BatchOptions,
@@ -134,7 +155,13 @@ export async function runBatchConversion(
   signal?: AbortSignal
 ): Promise<BatchResult> {
   const startTime = Date.now();
-  const resolvedInput = path.resolve(options.inputDir);
+  const isSingleOrMultiFileMode =
+    Array.isArray(options.selectedFiles) && options.selectedFiles.length > 0;
+
+  const resolvedInput = isSingleOrMultiFileMode
+    ? path.dirname(path.resolve(options.selectedFiles![0]))
+    : path.resolve(options.inputDir);
+
   const resolvedOutput = path.resolve(
     options.outputDir?.trim() || path.join(resolvedInput, 'PDF_Output')
   );
@@ -166,6 +193,7 @@ export async function runBatchConversion(
     missingFontWarnings: 0,
     elapsedMs: 0,
     etaMs: null,
+    ramMb: getProcessRamMb(),
   });
 
   const fontStore = await ensureSystemFontsLoaded();
@@ -173,22 +201,27 @@ export async function runBatchConversion(
     emitLog(
       'warn',
       'FONT',
-      `Gagal memuat font sistem: ${fontStore.status.error}. Menggunakan font PDF standar.`
+      `Gagal memuat indeks font sistem: ${fontStore.status.error}. Menggunakan font PDF standar.`
     );
   } else {
     emitLog(
       'info',
       'INFO',
-      `Cache font sistem siap (${fontStore.status.fontFileCount} file font, ${fontStore.status.loadTimeMs} ms).`
+      `Indeks font siap (${fontStore.status.fontFileCount} file font Windows, RAM ~${getProcessRamMb()} MB).`
     );
   }
 
-  const files = await collectMetafiles(resolvedInput, options.recursive);
+  const files = isSingleOrMultiFileMode
+    ? options
+        .selectedFiles!.map((p) => path.resolve(p))
+        .filter((p) => SUPPORTED_EXTS.has(path.extname(p).toLowerCase()))
+    : await collectMetafiles(resolvedInput, options.recursive);
+
   if (files.length === 0) {
     emitLog(
       'info',
       'INFO',
-      'Tidak ditemukan file .wmf, .emf, .wmz, atau .emz pada folder sumber.'
+      'Tidak ditemukan file .wmf, .emf, .wmz, atau .emz untuk dikonversi.'
     );
     const elapsedMs = Date.now() - startTime;
     callbacks.onProgress({
@@ -201,6 +234,7 @@ export async function runBatchConversion(
       missingFontWarnings: 0,
       elapsedMs,
       etaMs: 0,
+      ramMb: getProcessRamMb(),
     });
     return {
       cancelled: false,
@@ -213,12 +247,6 @@ export async function runBatchConversion(
       elapsedMs,
     };
   }
-
-  emitLog(
-    'info',
-    'INFO',
-    `Ditemukan ${files.length} file metafile. Memulai konversi vektor ke ${resolvedOutput}`
-  );
 
   let successCount = 0;
   let skipCount = 0;
@@ -235,10 +263,14 @@ export async function runBatchConversion(
     }
 
     const filePath = files[i];
-    const relPath = path.relative(resolvedInput, filePath);
+    const relPath = isSingleOrMultiFileMode
+      ? path.basename(filePath)
+      : path.relative(resolvedInput, filePath);
     const extUpper = path.extname(filePath).replace('.', '').toUpperCase();
     const baseName = path.basename(filePath, path.extname(filePath));
-    const targetSubdir = path.join(resolvedOutput, path.dirname(relPath));
+    const targetSubdir = isSingleOrMultiFileMode
+      ? resolvedOutput
+      : path.join(resolvedOutput, path.dirname(relPath));
     const targetPdfPath = path.join(targetSubdir, `${baseName}.pdf`);
     const fileStart = Date.now();
 
@@ -246,12 +278,12 @@ export async function runBatchConversion(
       relPath,
       format: extUpper,
       status: 'processing',
-      detail: 'Memproses...',
+      detail: 'Sedang mengubah ke PDF...',
     });
 
     try {
       const buffer = await readFile(filePath);
-      const info = await getMetafileInfo(buffer);
+      const info = await getMetafileInfo(buffer, { maxRecords: 1_000_000 });
 
       if (!info) {
         skipCount++;
@@ -274,35 +306,39 @@ export async function runBatchConversion(
             emitLog(
               'warn',
               'FONT',
-              `Font tidak ditemukan di Windows: ${missing.join(', ')} (memakai substitusi font).`,
+              `Font belum terpasang: ${missing.join(', ')} (otomatis disesuaikan).`,
               relPath
             );
           }
         }
 
-        if (info.truncated) {
-          emitLog(
-            'warn',
-            'INFO',
-            'Stream metafile terdeteksi terpotong (truncated); mencoba konversi parsial.',
-            relPath
-          );
-        }
+        const activeFonts = await resolveFontsForConversion(info.fonts, fontStore);
+        const fontFamilyMap = buildSmartFontFamilyMap(info.fonts, fontStore);
+
+        // Preserve exact 1:1 physical page size in points (1 px at 96 DPI = 0.75 pt)
+        // while rendering internal GDI/hatch grid at 2x HiDPI precision (dpiScale: 2).
+        const pageWidthPt = Math.max(1, info.width * 0.75);
+        const pageHeightPt = Math.max(1, info.height * 0.75);
 
         const pdfBytes = await convertMetafileToPdf(buffer, {
-          fonts: fontStore.fonts,
-          pageSize: 'drawing',
+          fonts: activeFonts,
+          fontFamilyMap,
+          dpiScale: 2,
+          maxCanvasDimension: 16384,
+          maxRecords: 1_000_000,
+          pageSize: { width: pageWidthPt, height: pageHeightPt },
           compress: true,
           gdiAntialias: true,
           exactRasterOps: true,
           imageResampling: 'renderer',
+          fontSmoothing: 'cleartype',
           title: baseName,
           signal,
         });
 
         if (!pdfBytes) {
           errorCount++;
-          const msg = 'Konversi mengembalikan null';
+          const msg = 'Konversi gagal (hasil kosong)';
           emitLog('error', 'ERROR', msg, relPath);
           callbacks.onFileUpdate?.({
             relPath,
@@ -319,14 +355,9 @@ export async function runBatchConversion(
           const durationMs = Date.now() - fileStart;
           const okDetail =
             missing.length > 0
-              ? `Font hilang: ${missing.join(', ')}`
-              : `${info.width}x${info.height} px -> ${path.basename(targetPdfPath)}`;
-          emitLog(
-            'ok',
-            'OK',
-            `${formatLabel} (${info.width}x${info.height} px) -> ${path.basename(targetPdfPath)}`,
-            relPath
-          );
+              ? `Selesai -> ${path.basename(targetPdfPath)} (Font disesuaikan: ${missing.join(', ')})`
+              : `Selesai -> ${path.basename(targetPdfPath)} (${info.width}x${info.height} px)`;
+          emitLog('ok', 'OK', okDetail, relPath);
           callbacks.onFileUpdate?.({
             relPath,
             format: formatLabel,
@@ -375,6 +406,7 @@ export async function runBatchConversion(
       missingFontWarnings,
       elapsedMs: Date.now() - startTime,
       etaMs,
+      ramMb: getProcessRamMb(),
       currentFile: relPath,
     });
   }
@@ -383,7 +415,7 @@ export async function runBatchConversion(
 
   if (!cancelled && options.mergePdf && generatedPdfPaths.length > 0) {
     const mergedName =
-      options.mergedFileName?.trim() || 'BJ-Core_Gabungan.pdf';
+      options.mergedFileName?.trim() || 'BJ-PDF_Gabungan.pdf';
     const safeMergedName = mergedName.toLowerCase().endsWith('.pdf')
       ? mergedName
       : `${mergedName}.pdf`;
@@ -399,6 +431,7 @@ export async function runBatchConversion(
       missingFontWarnings,
       elapsedMs: Date.now() - startTime,
       etaMs: null,
+      ramMb: getProcessRamMb(),
       currentFile: safeMergedName,
     });
 
@@ -425,16 +458,6 @@ export async function runBatchConversion(
   }
 
   const totalElapsed = Date.now() - startTime;
-  if (cancelled) {
-    emitLog('warn', 'INFO', 'Proses konversi dibatalkan oleh pengguna.');
-  } else {
-    emitLog(
-      'info',
-      'INFO',
-      `Selesai dalam ${(totalElapsed / 1000).toFixed(1)} dtk — Sukses: ${successCount}, Skip: ${skipCount}, Error: ${errorCount}.`
-    );
-  }
-
   callbacks.onProgress({
     phase: cancelled ? 'cancelled' : 'done',
     current: cancelled ? successCount + skipCount + errorCount : files.length,
@@ -445,6 +468,7 @@ export async function runBatchConversion(
     missingFontWarnings,
     elapsedMs: totalElapsed,
     etaMs: 0,
+    ramMb: getProcessRamMb(),
     mergedOutputPath,
   });
 

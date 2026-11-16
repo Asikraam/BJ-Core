@@ -1,16 +1,21 @@
 # Changelog
 
-All notable changes to BJ-Core are documented here.
+All notable changes to **BJ PDF** (`BJ-Core`) are documented here.
+
+## [1.1.0] — 2026-11-17
+
+### Added
+- **Single-File & Multi-File Picker (`Pilih 1 File...`)**: Convert a single `.wmf`/`.emf`/`.wmz`/`.emz` file (or several selected files) in addition to full folders (`Pilih 1 Folder...`). Drag-and-drop automatically detects single files vs folders.
+- **Drafter-Friendly UI & Numbered Workflow**: Simplified controls tailored for everyday CAD drafters (`1. Mulai Ubah ke PDF`, `Stop / Batal`, `2. Buka Folder Hasil PDF`).
+- **Live RAM Usage Indicator**: Real-time memory readout (`RAM: ~... MB`) in the header and status bar.
+- **Smart AutoCAD `.shx` Font Fallback**: Automatically maps common missing CAD stroke fonts (`simplex`, `romans`, `isocp`, `txt`, `monotxt`, `complex`) to clean installed technical fonts (`ISOCPEUR`, `Consolas`, `Arial`).
+- **Native Windows `.ico` Icon (`BJ PDF`)**: Embedded multi-place `.ico` icon so the Windows taskbar, window titlebar, and desktop shortcut display the `BJ PDF` icon instead of the default Electron icon.
+
+### Changed
+- **5× Lower RAM Usage (~130 MB / 0.13 GB vs ~783 MB / 0.76 GB in `v1.0.0`)**: Replaced upfront full-file loading of all 800+ system fonts with lightweight SFNT `name`-table header indexing (~5 MB RAM) and on-demand binary caching for used fonts.
+- **Higher Vector & Hatch Precision**: Upgraded `convertMetafileToPdf` to `dpiScale: 2` (with exact 1:1 physical page bounds in points), `maxCanvasDimension: 16384`, `maxRecords: 1,000,000`, and `fontSmoothing: 'cleartype'`.
+- **Natural Conversational Sundanese Guide (`docs/README_SU.md`)**: Rewritten in everyday conversational Sundanese (*Sunda sapopoe / loma*).
 
 ## [1.0.0] — 2026-11-17
 
 Initial public release.
-
-### Added
-- Batch conversion of `.wmf`, `.emf`, `.wmz` and `.emz` to vector PDF via `emf-converter` (`pageSize: 'drawing'`, `gdiAntialias`, `exactRasterOps`, renderer-side image resampling).
-- Windows system fonts loaded once at startup and embedded as TrueType subsets; `[FONT]` warning and `Font Fallback` status when a drawing names a face that is not installed.
-- Recursive folder scan with natural sort and a mirrored `PDF_Output` tree.
-- Optional merge of every generated PDF into one file via `pdf-lib`.
-- Windows 11–style light UI: folder drag-and-drop, auto output path, live file queue table (name, type, status, duration, notes) with filter tabs, progress bar with ETA, cancel, and open-output-folder.
-- 1-click NSIS installer and portable ZIP for Windows x64.
-- Windows CI (typecheck, build, batch conversion test).
